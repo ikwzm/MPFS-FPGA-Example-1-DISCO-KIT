@@ -1,0 +1,20 @@
+/dts-v1/; /plugin/;
+
+/ {
+	fragment@0 {
+		target-path = "/fabric-bus@40000000";
+		#address-cells = <2>;
+		#size-cells = <2>;
+
+		__overlay__ {
+			#address-cells = <2>;
+			#size-cells = <2>;
+			udmabuf-fabric-low {
+				compatible = "ikwzm,u-dma-buf";
+				device-name = "udmabuf-fabric-low";
+				size = <0x200000>;
+				dma-mask = <32>;
+			};
+		};
+	};
+};

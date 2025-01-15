@@ -1,0 +1,21 @@
+/dts-v1/; /plugin/;
+
+/ {
+	fragment@0 {
+		target-path = "/soc";
+		#address-cells = <2>;
+		#size-cells = <2>;
+
+		__overlay__ {
+			#address-cells = <2>;
+			#size-cells = <2>;
+			udmabuf-soc-high {
+				compatible = "ikwzm,u-dma-buf";
+				device-name = "udmabuf-soc-high";
+				size = <0x200000>;
+				dma-mask = <40>;
+				dma-noncoherent;
+			};
+		};
+	};
+};
