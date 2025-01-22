@@ -3,6 +3,7 @@
 # Copyright (c) 2024 ikwzm
 
 import numpy as np
+import mmapio
 import mmap
 import os
 import glob
@@ -94,7 +95,7 @@ class Uio:
             regs_length = length
         else:
             raise ValueError("region range error")
-        return Uio.Regs(memmap, regs_offset, regs_length)
+        return mmapio.MemoryMappedIO(memmap, regs_offset, regs_length)
 
     class Regs:
         
