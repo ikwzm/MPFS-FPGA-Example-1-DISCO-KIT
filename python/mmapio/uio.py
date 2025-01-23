@@ -1,3 +1,7 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: BSD-2-Clause
+# Copyright (c) 2025 Ichiro Kawazome
+
 import mmap
 import os
 import glob
