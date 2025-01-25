@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 # Copyright (c) 2024 ikwzm
 
-from uio import Uio
+from mmapio import Uio
 import time
 
 if __name__ == '__main__':
