@@ -5,6 +5,7 @@
 import mmap
 import os
 import glob
+import select
 import re
 from .mmapio import MemoryMappedIO
 
@@ -12,36 +13,48 @@ class Uio:
     """A simple uio class"""
 
     @staticmethod
-    def find_device_file(device_name):
-        device_file = None
+    def find_device_by_name(name):
+        device_name = None
         r = re.compile("/sys/class/uio/(.*)/name")
-        for uio_device_name_file in glob.glob("/sys/class/uio/uio*/name"):
-            f = open(uio_device_name_file, "r")
-            uio_device_name = f.readline().strip()
-            if uio_device_name == device_name:
-                m = r.match(uio_device_name_file)
-                device_file = m.group(1)
+        for uio_name_file in glob.glob("/sys/class/uio/uio*/name"):
+            f = open(uio_name_file, "r")
+            uio_name = f.readline().strip()
+            if uio_name == name:
+                m = r.match(uio_name_file)
+                device_name = m.group(1)
             f.close()
-        return device_file
+        return device_name
         
-    def __init__(self, name):
-        self.name        = name
-        self.device_name = Uio.find_device_file(self.name)
+    def __init__(self, name=None, device_name=None):
+        if   device_name != None:
+            self.device_name = device_name
+            self.name        = self.read_class_attribute("name")
+        elif name != None:
+            self.name        = name
+            self.device_name = Uio.find_device_by_name(self.name)
+            if self.device_name == None:
+                raise ValueError("[{}.(name={})] Invalid device_name={} ".format(self.__class__.__name__, name, self.device_name))
         self.device_file = os.open('/dev/%s' % self.device_name, os.O_RDWR | os.O_SYNC)
         self.memmap_dict = {}
 
-    def sys_class_file_name(self, name):
+    def class_attribute_file_name(self, name):
         return '/sys/class/uio/%s/%s' % (self.device_name, name)
 
+    def read_class_attribute(self, name):
+        file_name = self.class_attribute_file_name(name)
+        with open(file_name, "r") as file:
+            return file.readline().strip()
+        return None
+        
     def read_class_integer(self, name):
-        file_name = self.sys_class_file_name(name)
+        file_name = self.class_attribute_file_name(name)
         with open(file_name, "r") as file:
             value = file.readline().strip()
         if   value.startswith("0x") or value.startswith("0X"):
             return int(value, 16)
         elif value.isdigit():
             return int(value, 10)
-        raise ValueError("Invalid value %s in %s " % (value, file_name))
+        raise ValueError("[{}.read_class_integer(name={})] Invalid value {} ".format(self.__class__.__name__, name, value))
         
     def get_map_addr(self, index=0):
         return self.read_class_integer('maps/map%d/addr'   % index)
@@ -64,8 +77,14 @@ class Uio:
     def irq_off(self):
         os.write(self.device_file, bytes([0, 0, 0, 0]))
         
-    def wait_irq(self):
-        os.read(self.device_file, 4)
+    def wait_irq(self, timeout=None):
+        ready, _, _ = select.select([self.device_file], [], [], timeout)
+        if not ready:
+            return None
+        else:
+            bytes = os.read(self.device_file, 4)
+            count = int.from_bytes(bytes, byteorder="little", signed=True)
+            return count
 
     def regs(self, index=0, offset=0, length=None):
         if index in self.memmap_dict.keys():
@@ -93,5 +112,5 @@ class Uio:
         elif regs_offset + length <= mmap_size:
             regs_length = length
         else:
-            raise ValueError("region range error")
+            raise ValueError("[{}.regs(index={},offset={},length={})] region range error ".format(self.__class__.__name__, index, offset, length))
         return MemoryMappedIO(memmap, regs_offset, regs_length)
