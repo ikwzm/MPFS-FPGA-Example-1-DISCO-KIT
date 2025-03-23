@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 # Copyright (c) 2025 ikwzm
 
-$LOAD_PATH.unshift(File.join("..", "..", "ruby", "mmapio-0.1.0", "lib"))
+$LOAD_PATH.unshift(File.join("..", "..", "ruby", "mmapio-0.2.0", "lib"))
 require 'mmapio'
 
 if __FILE__ == $0
